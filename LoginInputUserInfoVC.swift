@@ -80,7 +80,6 @@ class LoginInputUserInfoVC: UIViewController {
                     tabBarController.setViewControllers([communityListVC, myPageVC], animated: false)
                     // 탭 바 컨트롤러를 루트 뷰 컨트롤러로 설정하여 이동
                     self!.navigationController?.setViewControllers([tabBarController], animated: true)
-//                    self!.navigationController?.pushViewController(tabBarController, animated: true)
                     
                 case .failure(let error):
                     print("요청 실패: \(error)")

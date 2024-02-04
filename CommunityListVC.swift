@@ -6,23 +6,253 @@
 //
 
 import UIKit
-
+import Alamofire
 
 class CommunityListVC: UIViewController {
     
-    let data = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7"]
-
     var communityListVM: CommunityListVM!
     var accessToken: String = ""
-    
+    var selectedPage: Int = 1 // 기본값은 1번 페이지
+
     @IBOutlet weak var segmentController: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
+    
+    @IBOutlet weak var page1Btn: UIButton!
+    @IBOutlet weak var page2Btn: UIButton!
+    @IBOutlet weak var page3Btn: UIButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         communityListVM = CommunityListVM()
         tableView.delegate = self
         tableView.dataSource = self
+        getList1()
+        page1Btn.isSelected = true // 초기값으로 1번 버튼이 선택되도록 설정
+        
+        
+    }
+  //MARK: - 1페이지 불러오기
+    func getList1() {
+        print("getList1() called")
+        //토큰을 꼽아줘야지만 데이터를 받을수있음/보안상의 이유임
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(self.accessToken)"
+        ]
+        
+        AF.request(communityListVM.getListPage1URL, method: .get, parameters: nil, encoding: JSONEncoding.default, headers: headers)
+            .validate() // 선택 사항: 응답을 유효성 검사할 수 있음
+            .responseDecodable(of: CommunityListVM.PetitionResponse.self) { response in
+                switch response.result {
+                case .success(let petitionResponse):
+                    // 요청 성공시, petitionResponse 변수에 파싱된 결과가 들어갑니다.
+                    print("요청 성공: \(petitionResponse)")
+                    if let results = petitionResponse.results {
+                        for petition in results {
+                            if self.isPetitionOngoing(petition) {
+                                self.communityListVM.ongoingPetitions.append(petition)
+                            } else {
+                                self.communityListVM.finishedPetitions.append(petition)
+                            }
+                        }
+                        self.communityListVM.cellCount = self.communityListVM.ongoingPetitions.count
+                    }
+                    // 테이블 뷰 리로드
+                    DispatchQueue.main.async {
+                        self.tableView.reloadData()
+                    }
+                    
+                case .failure(let error):
+                    print("요청 실패: \(error)")
+                }
+            }
+    }
+    
+    //MARK: - 2페이지 불러오기
+    func getList2() {
+        print("getList1() called")
+        //토큰을 꼽아줘야지만 데이터를 받을수있음/보안상의 이유임
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(self.accessToken)"
+        ]
+        
+        AF.request(communityListVM.getListPage2URL, method: .get, parameters: nil, encoding: JSONEncoding.default, headers: headers)
+            .validate() // 선택 사항: 응답을 유효성 검사할 수 있음
+            .responseDecodable(of: CommunityListVM.PetitionResponse.self) { response in
+                switch response.result {
+                case .success(let petitionResponse):
+                    // 요청 성공시, petitionResponse 변수에 파싱된 결과가 들어갑니다.
+                    print("요청 성공: \(petitionResponse)")
+                    if let results = petitionResponse.results {
+                        for petition in results {
+                            if self.isPetitionOngoing(petition) {
+                                self.communityListVM.ongoingPetitions2.append(petition)
+                            } else {
+                                self.communityListVM.finishedPetitions2.append(petition)
+                            }
+                        }
+                        self.communityListVM.cellCount = self.communityListVM.ongoingPetitions2.count
+                    }
+                    // 테이블 뷰 리로드
+                    DispatchQueue.main.async {
+                        self.tableView.reloadData()
+                    }
+                    
+                case .failure(let error):
+                    print("요청 실패: \(error)")
+                }
+            }
+    }
+    
+    
+    //MARK: - 3페이지 불러오기
+    func getList3() {
+        print("getList1() called")
+        //토큰을 꼽아줘야지만 데이터를 받을수있음/보안상의 이유임
+        let headers: HTTPHeaders = [
+            "Authorization": "Bearer \(self.accessToken)"
+        ]
+        
+        AF.request(communityListVM.getListPage3URL, method: .get, parameters: nil, encoding: JSONEncoding.default, headers: headers)
+            .validate() // 선택 사항: 응답을 유효성 검사할 수 있음
+            .responseDecodable(of: CommunityListVM.PetitionResponse.self) { response in
+                switch response.result {
+                case .success(let petitionResponse):
+                    // 요청 성공시, petitionResponse 변수에 파싱된 결과가 들어갑니다.
+                    print("요청 성공: \(petitionResponse)")
+                    if let results = petitionResponse.results {
+                        for petition in results {
+                            if self.isPetitionOngoing(petition) {
+                                self.communityListVM.ongoingPetitions3.append(petition)
+                            } else {
+                                self.communityListVM.finishedPetitions3.append(petition)
+                            }
+                        }
+                        self.communityListVM.cellCount = self.communityListVM.ongoingPetitions3.count
+                    }
+                    // 테이블 뷰 리로드
+                    DispatchQueue.main.async {
+                        self.tableView.reloadData()
+                    }
+                    
+                case .failure(let error):
+                    print("요청 실패: \(error)")
+                }
+            }
+    }
+    
+    //MARK: - - - - - - - - - - - - - -
+    
+    func calculateDday(from targetDate: Date, to today: Date) -> Int? {
+        let calendar = Calendar.current
+        
+        // 날짜 차이 계산
+        let components = calendar.dateComponents([.day], from: today, to: targetDate)
+        
+        // D-day 반환
+        return components.day
+    }
+    
+    func isPetitionOngoing(_ petition: CommunityListVM.Petition) -> Bool {
+        // dDay 값을 확인하여 진행 중인지 여부를 판단
+        guard let dDay = petition.dDay else {
+            return false // dDay가 nil이면 종료된 것으로 간주
+        }
+        return dDay >= 0 // dDay가 0 이상이면 진행 중인 것으로 판단
+    }
+    
+    @IBAction func tapSegmentBtn(_ sender: UISegmentedControl) {
+//        var numOfCell: Int = 0
+//        switch segmentController.selectedSegmentIndex {
+//        case 0:
+//            numOfCell = communityListVM.ongoingPetitions.count
+//        case 1:
+//            numOfCell = communityListVM.finishedPetitions.count
+//        default:
+//            print("")
+//        }
+//        communityListVM.cellCount = numOfCell
+//        self.tableView.reloadData()
+        
+        var numOfCell: Int = 0
+            
+            // 선택된 페이지에 따라 데이터 필터링
+            switch selectedPage {
+            case 1:
+                switch segmentController.selectedSegmentIndex {
+                case 0:
+                    numOfCell = communityListVM.ongoingPetitions.count
+                case 1:
+                    numOfCell = communityListVM.finishedPetitions.count
+                default:
+                    print("")
+                }
+            case 2:
+                switch segmentController.selectedSegmentIndex {
+                case 0:
+                    numOfCell = communityListVM.ongoingPetitions2.count
+                case 1:
+                    numOfCell = communityListVM.finishedPetitions2.count
+                default:
+                    print("")
+                }
+            case 3:
+                switch segmentController.selectedSegmentIndex {
+                case 0:
+                    numOfCell = communityListVM.ongoingPetitions3.count
+                case 1:
+                    numOfCell = communityListVM.finishedPetitions3.count
+                default:
+                    print("")
+                }
+            default:
+                break
+            }
+            
+            // TableView 갱신
+            communityListVM.cellCount = numOfCell
+            self.tableView.reloadData()
+      
+        
+        
+    }
+    
+   
+    
+    
+    //MARK: - 페이지 버튼
+
+    @IBAction func tapPageBtn(_ sender: UIButton) {
+        page1Btn.isSelected = false
+        page2Btn.isSelected = false
+        page3Btn.isSelected = false
+        
+        // 눌린 버튼만 선택되도록 설정
+        sender.isSelected = true
+        
+            // 선택된 페이지에 따라 getList 메서드 호출
+            switch sender {
+            case page1Btn:
+                selectedPage = 1
+                communityListVM.ongoingPetitions.removeAll()
+                communityListVM.finishedPetitions.removeAll()
+                segmentController.selectedSegmentIndex = 0 // 진행 중 세그먼트 선택
+               getList1()
+                
+            case page2Btn:
+                selectedPage = 2
+                communityListVM.ongoingPetitions2.removeAll()
+                communityListVM.finishedPetitions2.removeAll()
+                segmentController.selectedSegmentIndex = 0 // 진행 중 세그먼트 선택
+               getList2()
+            case page3Btn:
+                selectedPage = 3
+                communityListVM.ongoingPetitions3.removeAll()
+                communityListVM.finishedPetitions3.removeAll()
+                segmentController.selectedSegmentIndex = 0 // 진행 중 세그먼트 선택
+                getList3()
+            default:
+                break
+            }
     }
     
 }
@@ -31,36 +261,214 @@ class CommunityListVC: UIViewController {
 extension CommunityListVC: UITableViewDelegate , UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return data.count
+        return communityListVM.cellCount
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "myCell") as? myCell else {
             return UITableViewCell()
         }
-        cell.proposalDateLabel.text = "제안날짜: 2024-01-01"
-        cell.titleLabel.text = "제목: 요즘 날씨가 너무추워요"
-        cell.contentSummaryLabel.text = "요약: 이부분은 어떤요약이 들어갈까요?? 여튼 요약이 들어간답니다"
-        cell.DdayLabel.text = "D-14"
-        cell.petitionerLabel.text = "청원인: 금쪽이"
+        
+//        var petition: CommunityListVM.Petition?
+//        switch segmentController.selectedSegmentIndex {
+//        case 0:
+//            // "진행중" 세그먼트가 선택된 경우
+//            petition = communityListVM.ongoingPetitions[indexPath.row]
+//        case 1:
+//            // "종료" 세그먼트가 선택된 경우
+//            petition = communityListVM.finishedPetitions[indexPath.row]
+//        default:
+//            break
+//        }
+        
+        
+        var petition: CommunityListVM.Petition?
+            switch selectedPage {
+            case 1:
+                switch segmentController.selectedSegmentIndex {
+                case 0:
+                    // "진행중" 세그먼트가 선택된 경우
+                    petition = communityListVM.ongoingPetitions[indexPath.row]
+                case 1:
+                    // "종료" 세그먼트가 선택된 경우
+                    petition = communityListVM.finishedPetitions[indexPath.row]
+                default:
+                    break
+                }
+            case 2:
+                switch segmentController.selectedSegmentIndex {
+                case 0:
+                    // "진행중" 세그먼트가 선택된 경우
+                    petition = communityListVM.ongoingPetitions2[indexPath.row]
+                case 1:
+                    // "종료" 세그먼트가 선택된 경우
+                    petition = communityListVM.finishedPetitions2[indexPath.row]
+                default:
+                    break
+                }
+            case 3:
+                switch segmentController.selectedSegmentIndex {
+                case 0:
+                    // "진행중" 세그먼트가 선택된 경우
+                    petition = communityListVM.ongoingPetitions3[indexPath.row]
+                case 1:
+                    // "종료" 세그먼트가 선택된 경우
+                    petition = communityListVM.finishedPetitions3[indexPath.row]
+                default:
+                    break
+                }
+            default:
+                break
+            }
+        
+        if let dDay = petition?.dDay {
+            if dDay >= 0 {
+                // D-day가 0 이상인 경우
+                cell.DdayLabel.text = "D - \(dDay)"
+            } else {
+                // D-day가 음수인 경우
+                cell.DdayLabel.text = "종료"
+            }
+        } else {
+            // D-day가 nil인 경우
+            cell.DdayLabel.text = ""
+        }
+        
+        cell.proposalDateLabel.text = "제안날짜: \(petition!.proposerDt)"
+        cell.titleLabel.text = "제목: \(petition!.billName)"
+        cell.contentSummaryLabel.text = "요약: \(petition!.content)"
+        cell.petitionerLabel.text = "청원인: \(petition!.proposer)"
+        
+        cell.layer.masksToBounds = false
+        cell.layer.shadowColor = UIColor.black.cgColor
+        cell.layer.shadowOpacity = 0.5
+        cell.layer.shadowOffset = CGSize(width: 0, height: 2)
+        cell.layer.shadowRadius = 10
+        cell.layer.cornerRadius = 10
+        
+        cell.contentView.frame.inset(by: UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0))
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 135
+        return 200
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
         let selectedIndex = indexPath.row
-           
-           // CommunityListDetailVC를 Storyboard에서 인스턴스화합니다.
-           if let communityListDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListDetailVC") as? CommunityListDetailVC {
-               // 선택된 셀의 인덱스를 CommunityListDetailVC에 전달합니다.
-               communityListDetailVC.selectedIndex = selectedIndex
-               
-               // CommunityListDetailVC로 이동합니다.
-               navigationController?.pushViewController(communityListDetailVC, animated: true)
-           }
+            let token = self.accessToken
+            
+            switch segmentController.selectedSegmentIndex {
+            case 0:
+                // 1번째 버튼이 선택된 경우
+                if let communityListDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListDetailVC") as? CommunityListDetailVC {
+                    // 선택된 셀의 인덱스에 해당하는 데이터 가져오기
+                    let ongoingData: CommunityListVM.Petition
+                    switch selectedPage {
+                    case 1:
+                        ongoingData = communityListVM.ongoingPetitions[selectedIndex]
+                    case 2:
+                        ongoingData = communityListVM.ongoingPetitions2[selectedIndex]
+                    case 3:
+                        ongoingData = communityListVM.ongoingPetitions3[selectedIndex]
+                    default:
+                        return
+                    }
+                    
+                    // 데이터를 CommunityListDetailVC에 전달합니다.
+                    communityListDetailVC.selectedIndex = selectedIndex
+                    communityListDetailVC.accessToken = token
+                    communityListDetailVC.billNO = ongoingData.billNo
+                    navigationController?.pushViewController(communityListDetailVC, animated: true)
+                }
+            case 1:
+                // 2번째 버튼이 선택된 경우
+                if let communityListEndDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListEndDetailVC") as? CommunityListEndDetailVC {
+                    // 선택된 셀의 인덱스에 해당하는 데이터 가져오기
+                    let finishedData: CommunityListVM.Petition
+                    switch selectedPage {
+                    case 1:
+                        finishedData = communityListVM.finishedPetitions[selectedIndex]
+                    case 2:
+                        finishedData = communityListVM.finishedPetitions2[selectedIndex]
+                    case 3:
+                        finishedData = communityListVM.finishedPetitions3[selectedIndex]
+                    default:
+                        return
+                    }
+                    
+                    // 데이터를 CommunityListEndDetailVC에 전달합니다.
+                    communityListEndDetailVC.selectedIndex = selectedIndex
+                    communityListEndDetailVC.accessToken = token
+                    communityListEndDetailVC.billNO = finishedData.billNo
+                    navigationController?.pushViewController(communityListEndDetailVC, animated: true)
+                }
+            default:
+                break
+            }
+        
+        //⬇️2번째로 해봤던 코드. 1번버튼 눌렀을때의 인덱스로밖에 안나와서 찬성2,반대8이면 3페이지가서 반대10번째 누르면 오류뜸.
+//        let selectedIndex = indexPath.row
+//           let token = self.accessToken
+//           
+//           switch segmentController.selectedSegmentIndex {
+//           case 0:
+//               // "진행중" 세그먼트가 선택된 경우
+//               if let communityListDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListDetailVC") as? CommunityListDetailVC {
+//                   // 선택된 셀의 인덱스에 해당하는 데이터 가져오기
+//                   let ongoingData = communityListVM.ongoingPetitions[selectedIndex]
+//                   // 데이터를 CommunityListDetailVC에 전달합니다.
+//                   communityListDetailVC.selectedIndex = selectedIndex
+//                   communityListDetailVC.accessToken = token
+//                   communityListDetailVC.billNO = ongoingData.billNo
+//                   navigationController?.pushViewController(communityListDetailVC, animated: true)
+//               }
+//           case 1:
+//               // "종료" 세그먼트가 선택된 경우
+//               if let communityListEndDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListEndDetailVC") as? CommunityListEndDetailVC {
+//                   // 선택된 셀의 인덱스에 해당하는 데이터 가져오기
+//                   let finishedData = communityListVM.finishedPetitions[selectedIndex]
+//                   // 데이터를 CommunityListEndDetailVC에 전달합니다.
+//                   communityListEndDetailVC.selectedIndex = selectedIndex
+//                   communityListEndDetailVC.accessToken = token
+//                   communityListEndDetailVC.billNO = finishedData.billNo
+//                   navigationController?.pushViewController(communityListEndDetailVC, animated: true)
+//               }
+//           default:
+//               break
+//           }
+        
+        
+        //⬇️ 1번째로 해봤던코드, 2개까지밖에 안나옴
+//        let selectedIndex = indexPath.row
+//        let token = self.accessToken
+//        var ongoingData = communityListVM.ongoingPetitions[indexPath.row]
+//        var finishedData = communityListVM.finishedPetitions[indexPath.row]
+//
+//        switch segmentController.selectedSegmentIndex {
+//        case 0:
+//            // "진행중" 세그먼트가 선택된 경우
+//            if let communityListDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListDetailVC") as? CommunityListDetailVC {
+//                // 선택된 셀의 인덱스를 CommunityListDetailVC에 전달합니다.
+//                communityListDetailVC.selectedIndex = selectedIndex
+//                communityListDetailVC.accessToken = token
+//                communityListDetailVC.billNO = ongoingData.billNo
+//                navigationController?.pushViewController(communityListDetailVC, animated: true)
+//            }
+//        case 1:
+//            // "종료" 세그먼트가 선택된 경우
+//            if let communityListEndDetailVC = storyboard?.instantiateViewController(withIdentifier: "CommunityListEndDetailVC") as? CommunityListEndDetailVC {
+//                // 선택된 셀의 인덱스를 CommunityListEndDetailVC에 전달합니다.
+//                communityListEndDetailVC.selectedIndex = selectedIndex
+//                communityListEndDetailVC.accessToken = token
+//                communityListEndDetailVC.billNO = finishedData.billNo
+//                navigationController?.pushViewController(communityListEndDetailVC, animated: true)
+//            }
+//        default:
+//            break
+//        }
     }
     
 }
@@ -72,4 +480,13 @@ class myCell: UITableViewCell {
     @IBOutlet weak var contentSummaryLabel: UILabel!
     @IBOutlet weak var DdayLabel: UILabel!
     @IBOutlet weak var petitionerLabel: UILabel!
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+    
+        contentView.frame = contentView.frame.inset(by: UIEdgeInsets(top: 5, left: 0 , bottom: 5, right: 0))
+        
+    }
+    
+    
 }
