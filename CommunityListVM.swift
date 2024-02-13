@@ -52,8 +52,6 @@ class CommunityListVM {
             ongoingPetitions = data.filter { $0.isOngoing }
         }
     
-   
-    
     var data: [Petition] = []
     var ongoingPetitions: [Petition] = []
     var finishedPetitions: [Petition] = []
@@ -71,5 +69,4 @@ class CommunityListVM {
     var getListPage2URL = "http://3.34.164.96:8000/petitions/list?page=2"
     var getListPage3URL = "http://3.34.164.96:8000/petitions/list?page=3"
    
- 
 }

@@ -11,6 +11,7 @@ class LoginInputUserInfoVM {
     
     let loginURL = "http://3.34.164.96:8000/accounts/login"
     var accessToken: String = ""
+    var userName: String = ""
     
     struct TokenResponse: Codable {
         let email: String

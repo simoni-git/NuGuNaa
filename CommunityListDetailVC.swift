@@ -15,8 +15,11 @@ class CommunityListDetailVC: UIViewController {
     var accessToken: String = ""
     var billNO: String = ""
     var debate_code_O: String = ""
+    var debate_code_x: String = ""
     var linkURL: String = ""
     var folderURL: String = ""
+    var userEmail: String = ""
+    var billTitle: String = ""
     
     @IBOutlet weak var titleLabel: UILabel! // 청원제목
     @IBOutlet weak var summaryLabel: UILabel! // 요약내용
@@ -40,6 +43,7 @@ class CommunityListDetailVC: UIViewController {
         communityListDetailVM = CommunityListDetailVM()
         configure()
         getListDetail()
+        print(" 디테일VC 에서 이메일 받았다 --> \(userEmail)")
     }
     
     private func configure() {
@@ -66,12 +70,26 @@ class CommunityListDetailVC: UIViewController {
                     // 요청 성공시, petitionResponse 변수에 파싱된 결과가 들어갑니다.
                     print("요청 성공: \(petitionResponse)")
                     self.debate_code_O = petitionResponse.debate.debateCodeO
+                    self.debate_code_x = petitionResponse.debate.debateCodeX
                     self.linkURL = petitionResponse.petition.linkUrl
                     self.folderURL = petitionResponse.petition.petitionFileUrl
                     
+                    guard let summary = petitionResponse.petition.content else {
+                        return }
+                    let dateTime = petitionResponse.debate.debateDate
+                    let date = String(dateTime.prefix(10))
+                    let time1 = String(dateTime.dropFirst(11).prefix(2))
+                    let time2 = String(dateTime.dropFirst(14).prefix(2))
+                    
+                    let resultDateTime = petitionResponse.debate.memberAnnouncementDate
+                    let resultdate = String(dateTime.prefix(10))
+                    let resultTime1 = String(dateTime.dropFirst(11).prefix(2))
+                    let resultTime2 = String(dateTime.dropFirst(14).prefix(2))
+                    
+                    
                     DispatchQueue.main.async {
                         self.titleLabel.text = "제목: " + petitionResponse.petition.billName
-                        self.summaryLabel.text = petitionResponse.petition.content ?? ""
+                        self.summaryLabel.text = summary
                         self.petitionerLabel.text = petitionResponse.petition.proposer
                         self.introductionMemberLabel.text = petitionResponse.petition.approver
                         self.receiptLabel.text = petitionResponse.petition.proposerDt
@@ -79,8 +97,8 @@ class CommunityListDetailVC: UIViewController {
                         self.registrationDateLabel.text = petitionResponse.petition.committeeDt
                         
                         //MARK: EndDetailVC 의 토론하기부분 라벨들
-                        self.announcementDateLabel.text = petitionResponse.debate.memberAnnouncementDate
-                        self.discussionDateLabel.text = petitionResponse.debate.debateDate
+                        self.announcementDateLabel.text = "\(resultdate) " + "\(resultTime1)시" + "\(resultTime2)분"
+                        self.discussionDateLabel.text = "\(date) " + "\(time1)시" + "\(time2)분"
                     }
                     
                 case .failure(let error):
@@ -104,6 +122,28 @@ class CommunityListDetailVC: UIViewController {
         linkView.myURL = self.linkURL
         self.navigationController?.pushViewController(linkView, animated: true)
     }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "goApplyPopUpVC" {
+            if let destinationVC = segue.destination as? ApplyPopUpVC {
+                destinationVC.userEmail = self.userEmail
+                destinationVC.billNO = self.billNO
+                destinationVC.accessToken = self.accessToken
+            }
+        }
+    }
+    
+    @IBAction func goDebateBtn(_ sender: UIButton) {
+        let inPutCodeVC = storyboard!.instantiateViewController(identifier: "InputCodePopUpView") as! InputCodePopUpView
+        inPutCodeVC.accessToken = self.accessToken
+        inPutCodeVC.debate_code_O = self.debate_code_O
+        inPutCodeVC.debate_code_x = self.debate_code_x
+        inPutCodeVC.billNo = self.billNO
+        inPutCodeVC.billTitle = self.billTitle
+        
+        self.navigationController?.pushViewController(inPutCodeVC, animated: true)
+    }
+    
     
     
 }

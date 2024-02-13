@@ -9,8 +9,11 @@ import UIKit
 
 class InputCodePopUpView: UIViewController {
 
-    let exampleCode1 = "123" // 찬성측코드예시
-    let exampleCode2 = "456" // 반대측코드예시
+    var debate_code_O: String = "" // 찬성코드
+    var debate_code_x: String = "" // 반대코드
+    var billNo: String = ""
+    var accessToken: String = ""
+    var billTitle: String = ""
     
     
     @IBOutlet weak var popUpView: UIView!
@@ -21,8 +24,8 @@ class InputCodePopUpView: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
+        print("찬성코드는 \(debate_code_O) 이거고, 반대코드는 \(debate_code_x) 이건데 알아서 사용해")
 
-      
     }
     
     func configure() {
@@ -35,7 +38,7 @@ class InputCodePopUpView: UIViewController {
     }
     
     @IBAction func tapCancelBtn(_ sender: UIButton) {
-        dismiss(animated: true, completion: nil)
+        navigationController?.popViewController(animated: true)
     }
     
     @IBAction func tapOkBtn(_ sender: UIButton) {
@@ -46,7 +49,7 @@ class InputCodePopUpView: UIViewController {
         
         guard let code = inputCodeTextField.text else { return }
         
-        if code == exampleCode1 {
+        if code == debate_code_O {
             alertTitle = "찬성측 코드입니다"
             alertMessage = nil
             agreeAction = UIAlertAction(title: "찬성측 채팅방으로 이동", style: .default) { [weak self] _ in
@@ -56,7 +59,7 @@ class InputCodePopUpView: UIViewController {
             disagreeAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
         }
         
-        else if code == exampleCode2 {
+        else if code == debate_code_x {
             alertTitle = "반대측 코드입니다"
             alertMessage = nil
             agreeAction = UIAlertAction(title: "반대측 채팅방으로 이동", style: .default) { [weak self] _ in
@@ -81,7 +84,7 @@ class InputCodePopUpView: UIViewController {
     
     func moveToAgreeChatVC() {
        
-            guard let navController = navigationController else {
+            guard let naviController = navigationController else {
                 print("네비게이션 컨트롤러가 nil입니다.")
                 return
             }
@@ -89,12 +92,18 @@ class InputCodePopUpView: UIViewController {
                 print("AgreeChatVC를 가져올 수 없습니다.")
                 return
             }
-            navController.pushViewController(agreeChatVC, animated: true)
+        
+        agreeChatVC.accessToken = self.accessToken
+        agreeChatVC.billNO = self.billNo
+        agreeChatVC.billTitle = self.billTitle
+        naviController.popViewController(animated: true)// << 이 뷰는 네비게이션 스텍에서 지우고 다음줄에서 push뷰컨을 통해 다음뷰만 스텍에 추가, popview 를 다음줄에 써버리면 뷰가 이동후에 스텍에서 지워지는 사태가 발생함
+        naviController.pushViewController(agreeChatVC, animated: true)
+        
         
     }
 
     func moveToDisAgreeChatVC() {
-        guard let navController = navigationController else {
+        guard let naviController = navigationController else {
             print("네비게이션 컨트롤러가 nil입니다.")
             return
         }
@@ -102,7 +111,13 @@ class InputCodePopUpView: UIViewController {
             print("DisagreeChatVC를 가져올 수 없습니다.")
             return
         }
-        navController.pushViewController(disAgreeChatVC, animated: true)
+        
+        disAgreeChatVC.accessToken = self.accessToken
+        disAgreeChatVC.billNO = self.billNo
+        disAgreeChatVC.billTitle = self.billTitle
+        naviController.popViewController(animated: true)// << 이 뷰는 네비게이션 스텍에서 지우고 다음줄에서 push뷰컨을 통해 다음뷰만 스텍에 추가, popview 를 다음줄에 써버리면 뷰가 이동후에 스텍에서 지워지는 사태가 발생함
+        naviController.pushViewController(disAgreeChatVC, animated: true)
+        
     }
     
 }

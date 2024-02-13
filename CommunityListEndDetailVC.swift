@@ -33,13 +33,14 @@ class CommunityListEndDetailVC: UIViewController {
     var debate_code_x: String = ""
     var linkURL: String = ""
     var folderURL: String = ""
-    
+    var userEmail: String = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
         resultBtn.layer.cornerRadius = 10
         communityListEndDetailVM = CommunityListEndDetailVM()
         getListEndDetail()
+        print(" 디테일 END VC 에서 이메일 받았다 --> \(userEmail)")
     }
     
     func getListEndDetail() {
@@ -61,9 +62,21 @@ class CommunityListEndDetailVC: UIViewController {
                     self.linkURL = petitionResponse.petition.linkUrl
                     self.folderURL = petitionResponse.petition.petitionFileUrl
                     
+                    guard let summary = petitionResponse.petition.content else {
+                        return }
+                    let dateTime = petitionResponse.debate.debateDate
+                    let date = String(dateTime.prefix(10))
+                    let time1 = String(dateTime.dropFirst(11).prefix(2))
+                    let time2 = String(dateTime.dropFirst(14).prefix(2))
+                    
+                    let resultDateTime = petitionResponse.debate.memberAnnouncementDate
+                    let resultdate = String(dateTime.prefix(10))
+                    let resultTime1 = String(dateTime.dropFirst(11).prefix(2))
+                    let resultTime2 = String(dateTime.dropFirst(14).prefix(2))
+                    
                     DispatchQueue.main.async {
                         self.titleLabel.text = "제목: " + petitionResponse.petition.billName
-                        self.summaryLabel.text = petitionResponse.petition.content ?? ""
+                        self.summaryLabel.text = summary
                         self.petitionerLabel.text = petitionResponse.petition.proposer
                         self.introductionMemberLabel.text = petitionResponse.petition.approver
                         self.receiptLabel.text = petitionResponse.petition.proposerDt
@@ -71,8 +84,8 @@ class CommunityListEndDetailVC: UIViewController {
                         self.registrationDateLabel.text = petitionResponse.petition.committeeDt
                         
                         //MARK: EndDetailVC 의 토론하기부분 라벨들
-                        self.announcementDateLabel.text = petitionResponse.debate.memberAnnouncementDate
-                        self.discussionDateLabel.text = petitionResponse.debate.debateDate
+                        self.announcementDateLabel.text = "\(resultdate) " + "\(resultTime1)시" + "\(resultTime2)분"
+                        self.discussionDateLabel.text = "\(date) " + "\(time1)시" + "\(time2)분"
                         
                         
                     }
@@ -98,6 +111,15 @@ class CommunityListEndDetailVC: UIViewController {
         webView.myURL = self.folderURL
         self.navigationController?.pushViewController(webView, animated: true)
     }
+    
+    
+    @IBAction func tapGoResult(_ sender: UIButton) {
+        let resultVC = storyboard!.instantiateViewController(identifier: "ResultDetailVC") as! ResultDetailVC
+        resultVC.accessToken = self.accessToken
+        resultVC.billNO = self.billNO
+        navigationController?.pushViewController(resultVC, animated: true)
+    }
+    
     
 
 }

@@ -58,8 +58,11 @@ class LoginInputUserInfoVC: UIViewController {
                             
                             // 토큰 값을 변수에 저장
                             let token = tokenResponse.token
+                            let userName = tokenResponse.userName
+                            let userEmail = tokenResponse
                             // 변수에 저장된 토큰값을 뷰모델에도 저장
                             self!.loginInputUserInfoVM.accessToken = tokenResponse.token.access
+                            self!.loginInputUserInfoVM.userName = userName
                             print("받은 토큰: \(token)")
                             
                         } catch {
@@ -74,7 +77,11 @@ class LoginInputUserInfoVC: UIViewController {
                     let myPageVC = self!.storyboard?.instantiateViewController(withIdentifier: "MyPageVC") as! MyPageVC
                     
                     communityListVC.accessToken = self!.loginInputUserInfoVM.accessToken
+                    communityListVC.userEmail = email
+                    
                     myPageVC.accessToken = self!.loginInputUserInfoVM.accessToken
+                    myPageVC.userName = self!.loginInputUserInfoVM.userName
+                    myPageVC.userEmail = email
                     
                     
                     tabBarController.setViewControllers([communityListVC, myPageVC], animated: false)

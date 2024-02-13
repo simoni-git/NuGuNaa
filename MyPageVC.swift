@@ -12,12 +12,18 @@ class MyPageVC: UIViewController {
         
     var myPageVM: MyPageVM!
     var accessToken: String = ""
-
+    var userName: String = ""
+    var userEmail: String = ""
+    
+    @IBOutlet weak var contentView: UIView!
+    
     @IBOutlet weak var welcomeLabel: UILabel!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         myPageVM = MyPageVM()
+        contentView.layer.cornerRadius = 10
+        welcomeLabel.text = "\(userName) 님 환영합니다!"
     }
     
     @IBAction func tapLogOutBtn(_ sender: UIButton) {
@@ -67,12 +73,19 @@ class MyPageVC: UIViewController {
     
     
     @IBAction func tapMyHistoryBtn(_ sender: Any) {
-        // 토론내역 뷰  --> 테이블뷰로 즐겨찾기마냥 보여주는걸로 상의 완료
+       // 테이블뷰 하나 있는곳으로 이동
+        let historyVC = storyboard!.instantiateViewController(identifier: "RegisterHistoryVC") as RegisterHistoryVC
+        historyVC.accessToken = self.accessToken
+        historyVC.userEmail = self.userEmail
+        self.navigationController?.pushViewController(historyVC, animated: true)
+        
     }
     
     
+    
     @IBAction func tapAboutTeamBtn(_ sender: UIButton) {
-        // 팀소개뷰를 만들던 해서 띄우면 될듯(모달형식으로 ㄱ)
+        let webView = storyboard!.instantiateViewController(identifier: "AboutTeamVC") as AboutTeamVC
+        self.navigationController?.pushViewController(webView, animated: true)
     }
     
 }
