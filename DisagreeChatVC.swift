@@ -10,56 +10,19 @@ import Alamofire
 
 class DisagreeChatVC: UIViewController {
     
-    var fiveMinSeconds = 60 // 300
-    var oneMinSeconds = 30 // 60
-    var timers: [Timer] = []
-    let targetTimes = [15 * 60, 15 * 60 + 5, 15 * 60 + 6, 15 * 60 + 11, 15 * 60 + 16, 15 * 60 + 21, 15 * 60 + 22, 15 * 60 + 27, 15 * 60 + 28, 15 * 60 + 33, 15 * 60 + 34]
-    var timer: Timer?
-    
-       
-        
-        var data: [String] = []
-    
-   // var timerManager = TimerManager
-    
-//    
-//    //MARK: 실험
-//    
-//    var currentTimerIndex = 0
-//        let timerCountPerGroup = 5
-//        let timerInterval: TimeInterval = 60 // 각 타이머 간격 (초)
-//
-//        func startTimers() {
-//            startNextTimer()
-//        }
-//
-//        func startNextTimer() {
-//            if currentTimerIndex < timerCountPerGroup * 2 {
-//                let currentGroup = currentTimerIndex / timerCountPerGroup + 1
-//                let currentTimerInGroup = currentTimerIndex % timerCountPerGroup + 1
-//                
-//                print("Starting timer \(currentGroup)-\(currentTimerInGroup)")
-//                
-//                DispatchQueue.main.asyncAfter(deadline: .now() + timerInterval) {
-//                    print("Timer \(currentGroup)-\(currentTimerInGroup) finished")
-//                    self.currentTimerIndex += 1
-//                    self.startNextTimer()
-//                }
-//            } else {
-//                print("All timers finished")
-//            }
-//        }
-//    
-//
-//   
-//    
-//    //
+    var data: [String] = []
     var accessToken: String = ""
     var billNO: String = ""
     var position: Int = 1
     var billTitle: String = ""
     
     var disagreeChatVM: DisagreeChatVM!
+    var timer: Timer?
+    var timer2: Timer?
+    var timer3: Timer?
+    
+    var remaining299Seconds = 119 // 타이머 초 초기값 설정 299로 바꿔야함
+    var remaining119Seconds = 59 // 타이머 초 초기값 설정 119로 바꿔야함
     
     @IBOutlet weak var contentsView: UIView!
     @IBOutlet weak var timerLabel: UILabel!
@@ -75,26 +38,18 @@ class DisagreeChatVC: UIViewController {
         configure()
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 100 // 테이블뷰셀의 대략적인 높이
-        //MARK: 채팅방 들어오자마자 get 호출
-        getContentAPI()
-        //MARK:  get 호출 후 바로 5분 타이머 시작
-        //five_Own()
-        
-//        timerManager.delegate = self
-//        timerManager.startTimers()
-        
-//        if self.data.isEmpty {
-//            data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않으며 모든 채팅은 150자 이내로 작성해 주세요. 입론을 먼저 서술해 주세요!")
-//            self.tableView.reloadData()
-//         }
-        
-        let currentTime = Calendar.current.dateComponents(in: .current, from: Date())
-        let hour = currentTime.hour ?? 0
-        let minute = currentTime.minute ?? 0
-        let second = currentTime.second ?? 0
-        let currentSeconds = hour * 3600 + minute * 60 + second
-        
        
+       
+        if self.data.isEmpty {
+            data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않으며 모든 채팅은 150자 이내로 작성해 주세요. 입론을 먼저 서술해 주세요!")
+            self.tableView.reloadData()
+         }
+        //타이머가 바로 동작할수있도록 fire
+        timer?.fire()
+        // 1초마다 checkTime 메서드를 호출하는 타이머 설정
+        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(checkTime), userInfo: nil, repeats: true)
+        
+        
     }
     
     private func configure() {
@@ -102,7 +57,163 @@ class DisagreeChatVC: UIViewController {
         registerBtn.layer.cornerRadius = 10
         textView.layer.borderWidth = 1.0
         textView.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
+        registerBtn.isHidden = true
     }
+    
+    //MARK: - 타이머구현
+    func start299SecondTimer() {
+        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
+        print("start299SecondTimer - called ")
+        if let timer2 = timer2, timer2.isValid {
+            timer2.invalidate()
+        }
+        
+        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
+        timer2 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel), userInfo: nil, repeats: true)
+        
+        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
+        updateTimerLabel()
+    }
+    
+    @objc func updateTimerLabel() {
+           // timeLabel에 남은 시간을 표시합니다.
+        DispatchQueue.main.async { [weak self] in
+            self!.timerLabel.text = "제한시간: \(self!.remaining299Seconds)초"
+        }
+        //timerLabel.text = "\(remaining299Seconds)초"
+           
+           // 0초일 때에는 타이머를 정지하고 초기화
+           if remaining299Seconds == 0 {
+               timer2?.invalidate()
+               remaining299Seconds = 119 // 실험끝나면 299로 바꿀것
+              
+           } else {
+               // 남은 시간 감소
+               remaining299Seconds -= 1
+           }
+       }
+    
+    func start119SecondTimer() {
+        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
+        print("start119SecondTimer - called ")
+        if let timer3 = timer3, timer3.isValid {
+            timer3.invalidate()
+        }
+        
+        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
+        timer3 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel2), userInfo: nil, repeats: true)
+        
+        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
+        updateTimerLabel2()
+    }
+    
+    @objc func updateTimerLabel2() {
+           // timeLabel에 남은 시간을 표시합니다.
+        DispatchQueue.main.async { [weak self] in
+            self!.timerLabel.text = "대기하세요: \(self!.remaining119Seconds)초"
+        }
+           //timerLabel.text = "\(remaining119Seconds)초"
+           
+           // 0초일 때에는 타이머를 정지하고 초기화
+           if remaining119Seconds == 0 {
+               timer3?.invalidate()
+               remaining119Seconds = 59 // 실험끝나면 199로 바꿀것
+               self.registerBtn.isHidden = false
+           } else {
+               // 남은 시간 감소
+               remaining119Seconds -= 1
+           }
+       }
+    
+    @objc func checkTime() {
+        let currentDate = Date()
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute, .second], from: currentDate)
+        
+        guard let hour = components.hour, let minute = components.minute, let second = components.second else {
+            return
+        }
+        
+        // 15시 00분 00초 입장 get 호출 / 실험할때는 제거하고 뷰 입장하자마자 울리도록 구현해놓을것
+        if (hour == 00) && minute == 10 && second == 0 {
+           // getContentAPI() 동결
+            start299SecondTimer()
+            registerBtn.isHidden = false
+        }
+        
+        // 15시 06분 00초 post 호출
+        if (hour == 00) && minute == 12 && second == 0 {
+            //toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 07분 00초 get 호출
+        if (hour == 00) && minute == 13 && second == 0 {
+            //serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 13분 00초 post 호출
+        if (hour == 00) && minute == 15 && second == 0 {
+            //toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 14분 00초 get 호출
+        if (hour == 00) && minute == 16 && second == 0 {
+           // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 20분 00초 post 호출
+        if (hour == 00) && minute == 18 && second == 0  {
+            // toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 21분 00초 get 호출
+        if (hour == 00) && minute == 19 && second == 0  {
+            // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 27분 00초 post 호출
+        if (hour == 00) && minute == 21 && second == 0  {
+            // toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 28분 00초 get 호출
+        if (hour == 00) && minute == 22 && second == 0  {
+            // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 34분 00초 post 호출
+        if (hour == 00) && minute == 24 && second == 0  {
+            // toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 35분 00초 get 호출
+        if (hour == 00) && minute == 25 && second == 0  {
+           // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+    }
+    
+    func toGPTPost() {
+        print("toGPTPost 메서드 호출됨")
+        postGPTAPI()
+        
+    }
+    
+    func serverGet() {
+        print("serverGet 메서드 호출됨")
+        getContentAPI()
+      }
+    
     
 
     
@@ -111,8 +222,6 @@ class DisagreeChatVC: UIViewController {
         print(" 반대 채팅창~~. postGPTAPI calledddddddddd~~")
         //타이머가 지나면서 포스트가울리던 여튼 포스트가 울릴때마다 qType 의 변수가 1씩 올라가도록 구현해야함.
         //일단임시로 해보겠음
-        
-       
         
         let headers: HTTPHeaders = [
             "Authorization": "Bearer \(self.accessToken)"
@@ -139,9 +248,6 @@ class DisagreeChatVC: UIViewController {
     func myTextPostAPI() {
         
         //타이머가 지나면서 포스트가울리던 여튼 포스트가 울릴때마다 qType 의 변수가 1씩 올라가도록 구현해야함.
-        //일단임시로 해보겠음
-        
-        
         
         guard let text = self.textView.text else {return}
         
@@ -194,9 +300,9 @@ class DisagreeChatVC: UIViewController {
                         self.disagreeChatVM.data.append(contentsOf: filteredData)
                         print(" 몇개냐???  \(self.disagreeChatVM.data.count)")
                         
-                        DispatchQueue.main.async {
-                            self.tableView.reloadData()
-                        }
+//                        DispatchQueue.main.async {
+//                            self.tableView.reloadData()
+//                        }
                         
                         
                     case .failure(let error):
@@ -244,14 +350,13 @@ class DisagreeChatVC: UIViewController {
         //올라간 키보드 내리기
         self.view.frame.origin.y = 0
     }
-    
+    //MARK: - 등록버튼 tap
     @IBAction func tapRegisterBtn(_ sender: UIButton) {
         guard let text = textView.text else {return}
-       // self.data.append(text)
-        //self.tableView.reloadData()
-        //MARK: 버튼이 눌렸을 경우 텍스트를 토대로 Post
-        myTextPostAPI()
+
+        //myTextPostAPI()
         self.textView.text = nil
+        self.registerBtn.isHidden = true
     
          //등록버튼 누르면 바로 최신데이터가 보일수있게 스크롤해줌
 //        let indexPath = IndexPath(row: self.data.count, section: 0)
@@ -261,65 +366,6 @@ class DisagreeChatVC: UIViewController {
 //            // 뷰 위치 원래대로 복구
 //            self.view.frame.origin.y = 0
     }
-    
-    
-    //⬇️
-    
-   
-    @IBAction func b(_ sender: UIButton) {
-        self.postGPTAPI()
-    }
-    
-    
-    @IBAction func c(_ sender: UIButton) {
-        self.getContentAPI()
-    }
-    
-    
-    @IBAction func d(_ sender: UIButton) {
-        self.postGPTAPI()
-    }
-    
-    
-    @IBAction func e(_ sender: UIButton) {
-        self.getContentAPI()
-    }
-    
-    
-    
-    @IBAction func f(_ sender: UIButton) {
-        self.postGPTAPI()
-    }
-    
-    
-    @IBAction func g(_ sender: UIButton) {
-        self.getContentAPI()
-    }
-    
-    
-    @IBAction func h(_ sender: UIButton) {
-        self.postGPTAPI()
-    }
-    
-    
-    
-    
-    
-    @IBAction func i(_ sender: UIButton) {
-        self.getContentAPI()
-    }
-    
-    
-    @IBAction func j(_ sender: UIButton) {
-        self.postGPTAPI()
-    }
-    
-    
-    @IBAction func k(_ sender: UIButton) {
-        self.getContentAPI()
-    }
-    
-    
     
     
 }
@@ -333,26 +379,26 @@ extension DisagreeChatVC: UITableViewDelegate , UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "DisagreeChatCell") as? DisagreeChatCell else {
             return UITableViewCell()
         }
-//        let myData = self.data[indexPath.row]
-//        cell.mentLabel.text = myData
-        
-        let item = disagreeChatVM.data[indexPath.row]
-        let text = item.content
-        cell.mentLabel.text = text
-        
-        // 짝수 번째 셀인지 확인하여 레이아웃을 조정합니다.
-        if indexPath.row % 2 == 0 {
-            cell.mentLabel.text = "AI사회자: \(text)"
-            // 짝수 번째 셀: 셀을 왼쪽에 붙이고 오른쪽 마진을 추가합니다.
-            cell.mentLabel.textAlignment = .left
-            cell.contentView.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 8)
-        } else {
-            cell.mentLabel.text = "나: \(text)"
-            // 홀수 번째 셀: 셀을 오른쪽에 붙이고 왼쪽 마진을 추가합니다.
-            cell.mentLabel.textAlignment = .right
-            cell.contentView.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 16)
-        }
-        
+////        let myData = self.data[indexPath.row]
+////        cell.mentLabel.text = myData
+////        
+//        let item = disagreeChatVM.data[indexPath.row]
+//        let text = item.content
+//        cell.mentLabel.text = text
+//        
+//        // 짝수 번째 셀인지 확인하여 레이아웃을 조정합니다.
+//        if indexPath.row % 2 == 0 {
+//            cell.mentLabel.text = "AI사회자: \(text)"
+//            // 짝수 번째 셀: 셀을 왼쪽에 붙이고 오른쪽 마진을 추가합니다.
+//            cell.mentLabel.textAlignment = .left
+//            cell.contentView.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 8)
+//        } else {
+//            cell.mentLabel.text = "나: \(text)"
+//            // 홀수 번째 셀: 셀을 오른쪽에 붙이고 왼쪽 마진을 추가합니다.
+//            cell.mentLabel.textAlignment = .right
+//            cell.contentView.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 16)
+//        }
+//        
         cell.layer.masksToBounds = false
         cell.layer.shadowColor = UIColor.black.cgColor
         cell.layer.shadowOpacity = 0.5
@@ -387,82 +433,3 @@ class DisagreeChatCell: UITableViewCell {
     
 }
 
-//extension DisagreeChatVC: TimerManagerDelegate {
-//    func updateTimerLabel(timeString: String) {
-//        DispatchQueue.main.async {
-//            self.timerLabel.text = timeString
-//        }
-//    }
-//}
-
-//class TimerManager {
-//    
-//    init(delegate: TimerManagerDelegate? = nil, fiveMinuteTimer: Timer? = nil, oneMinuteTimer: Timer? = nil, currentCycle: Int = 0, disagreeVC: DisagreeChatVC) {
-//        self.delegate = delegate
-//        self.fiveMinuteTimer = fiveMinuteTimer
-//        self.oneMinuteTimer = oneMinuteTimer
-//        self.currentCycle = currentCycle
-//        self.disagreeVC = disagreeVC
-//    }
-//    weak var delegate: TimerManagerDelegate?
-//    var fiveMinuteTimer: Timer?
-//    var oneMinuteTimer: Timer?
-//    var currentCycle = 0
-//    var disagreeVC: DisagreeChatVC
-//    
-//    func startTimers() {
-//        startFiveMinuteTimer()
-//    }
-//    
-//    func startFiveMinuteTimer() {
-//        print("Starting 5-minute timer for cycle \(currentCycle + 1)")
-//        fiveMinuteTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: false) { _ in
-//            self.fiveMinuteTimer?.invalidate()
-//            self.startOneMinuteTimer()
-//            self.handleAPICall()
-//            self.currentCycle += 1
-//            if self.currentCycle == 5 {
-//                print("All cycles finished")
-//            }
-//            DispatchQueue.main.async {
-//                self.delegate?.updateTimerLabel(timeString: "5:00")
-//            }
-//        }
-//    }
-//    
-//    func startOneMinuteTimer() {
-//        print("Starting 1-minute timer for cycle \(currentCycle + 1)")
-//        oneMinuteTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
-//            self.oneMinuteTimer?.invalidate()
-//            self.startFiveMinuteTimer()
-//        }
-//    }
-//    
-//    func handleAPICall() {
-//        switch currentCycle {
-//        case 0:
-//            getContentAPI()
-//        case 1:
-//            getContentAPI()
-//        case 2:
-//            getContentAPI()
-//        case 3:
-//            getContentAPI()
-//        case 4:
-//            getContentAPI()
-//        default:
-//            break
-//        }
-//    }
-//    
-//    func getContentAPI() {
-//        // Implement your API call logic here
-//        print("API call )")
-//        disagreeVC.postGPTAPI()
-//        
-//    }
-//}
-//
-//protocol TimerManagerDelegate: AnyObject {
-//    func updateTimerLabel(timeString: String)
-//}

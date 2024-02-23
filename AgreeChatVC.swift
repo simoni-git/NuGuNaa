@@ -10,37 +10,22 @@ import Alamofire
 
 class AgreeChatVC: UIViewController {
     
-    var fiveMinSeconds = 60 //300
-    var oneMinSeconds = 30 // 60
-    
-    var timers: [Timer] = []
-    let targetTimes = [15 * 60, 15 * 60 + 5, 15 * 60 + 6, 15 * 60 + 11, 15 * 60 + 16, 15 * 60 + 21, 15 * 60 + 22, 15 * 60 + 27, 15 * 60 + 28, 15 * 60 + 33, 15 * 60 + 34]
-    
-    var timer: Timer?
-    
-//    let methodMappings: [Int: () -> Void] = [
-//            0: 겟 - 5-1
-//            1: 포 - 1-1
-//            2: 겟 - 5-2
-//            3: 포 - 1-2
-//            4: 겟 - 5-3
-//            5: 포 - 1-3
-//            6: 겟 - 5-4
-//            7: 포 - 1-4
-//            8: 겟 - 5-5
-//            9: 포 - 1-5
-//            10: 최종겟
-//        ]
-    
     var data: [String] = []
-   
-    
     var accessToken: String = ""
     var billNO: String = ""
     var position: Int = 0
     var billTitle: String = ""
     
+    
     var agreeChatVM: AgreeChatVM!
+    var timer: Timer?
+    var timer2: Timer?
+    var timer3: Timer?
+    
+    
+    var remaining299Seconds = 119 // 타이머 초 초기값 설정 299로 바꿔야함
+    var remaining119Seconds = 59 // 타이머 초 초기값 설정 119로 바꿔야함
+    
     
     @IBOutlet weak var contentsView: UIView!
     @IBOutlet weak var timerLabel: UILabel!
@@ -57,30 +42,16 @@ class AgreeChatVC: UIViewController {
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 100 // 테이블뷰셀의 대략적인 높이
         
-        getContentAPI()
-        five_Own()
+       // getContentAPI() 타이머부분에 정각에 울리도록 해놨음.
         
         if self.data.isEmpty {
             data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않으며 모든 채팅은 150자 이내로 작성해 주세요. 입론을 먼저 서술해 주세요!")
             self.tableView.reloadData()
          }
-        
-        let currentTime = Calendar.current.dateComponents(in: .current, from: Date())
-        let hour = currentTime.hour ?? 0
-        let minute = currentTime.minute ?? 0
-        let second = currentTime.second ?? 0
-        let currentSeconds = hour * 3600 + minute * 60 + second
-        
-//        for (index, time) in targetTimes.enumerated() {
-//            let interval = TimeInterval(time - currentSeconds)
-//            if interval >= 0 {
-//                let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
-//                    self?.methodMappings[index]?()
-//                }
-//                timers.append(timer)
-//            }
-//        }
-        
+        timer?.fire()
+        // 1초마다 checkTime 메서드를 호출하는 타이머 설정
+        timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(checkTime), userInfo: nil, repeats: true)
+      
     }
     
     func configure() {
@@ -88,278 +59,181 @@ class AgreeChatVC: UIViewController {
         registerBtn.layer.cornerRadius = 10
         textView.layer.borderWidth = 1.0
         textView.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
+        registerBtn.isHidden = true
     }
     
-    //MARK: - 타이머 구현 5-1
-    func five_Own() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer1), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer1() {
-           if fiveMinSeconds > 0 {
-               fiveMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               //MARK: 5-1 타이머가 종료되면 post 요청후 1-1 타이머 시작
-               postGPTAPI()
-               oneMinTimer1()
-           }
-       }
-       
-       func updateUI() {
-           // 초를 분과 초로 변환
-           let minutes = fiveMinSeconds / 60
-           let remainingSeconds = fiveMinSeconds % 60
-           
-           // 남은 시간을 라벨에 표시
-           DispatchQueue.main.async { [weak self] in
-               self!.timerLabel.text = String(format: "남은시간: %02d분%02d초", minutes, remainingSeconds)
-           }
-          
-       }
+    //MARK: - 타이머구현
+    func start299SecondTimer() {
+        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
+        print("start299SecondTimer - called ")
+        if let timer2 = timer2, timer2.isValid {
+            timer2.invalidate()
+        }
+        
+        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
+        timer2 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel), userInfo: nil, repeats: true)
+        
+        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
+        updateTimerLabel()
+    }
     
-    //MARK: - 타이머 구현 5-2
-    func five_Two() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
+    @objc func updateTimerLabel() {
+           // timeLabel에 남은 시간을 표시합니다.
+        DispatchQueue.main.async { [weak self] in
+            self!.timerLabel.text = "제한시간: \(self!.remaining299Seconds)초"
+        }
+        //timerLabel.text = "\(remaining299Seconds)초"
            
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer2), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer2() {
-           if fiveMinSeconds > 0 {
-               fiveMinSeconds -= 1
-               updateUI()
+           // 0초일 때에는 타이머를 정지하고 초기화
+           if remaining299Seconds == 0 {
+               timer2?.invalidate()
+               remaining299Seconds = 119 // 실험끝나면 299로 바꿀것
+               self.registerBtn.isHidden = true
            } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               //MARK: 두번째 5분 카운트가 지나면 바로 1분 카운트 시작
-               postGPTAPI()
-               oneMinTimer2()
-           }
-       }
-       
-      
-    
-    //MARK: - 타이머 구현 5-3
-    func five_Thr() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer3), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer3() {
-           if fiveMinSeconds > 0 {
-               fiveMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               postGPTAPI()
-               oneMinTimer3()
-           }
-       }
-       
-      
-    
-    //MARK: - 타이머 구현 5-4
-    func five_For() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer4), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer4() {
-           if fiveMinSeconds > 0 {
-               fiveMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               postGPTAPI()
-               oneMinTimer4()
-           }
-       }
-       
-     
-    
-    //MARK: - 타이머 구현 5-5
-    func five_Fiv() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer5), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer5() {
-           if fiveMinSeconds > 0 {
-               fiveMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               postGPTAPI()
-               oneMinTimer5()
+               // 남은 시간 감소
+               remaining299Seconds -= 1
            }
        }
     
-    //MARK: - 타이머 구현 1분 1-1
-    func oneMinTimer1() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
+    func start119SecondTimer() {
+        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
+        print("start119SecondTimer - called ")
+        if let timer3 = timer3, timer3.isValid {
+            timer3.invalidate()
+        }
+        
+        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
+        timer3 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel2), userInfo: nil, repeats: true)
+        
+        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
+        updateTimerLabel2()
+    }
+    
+    @objc func updateTimerLabel2() {
+           // timeLabel에 남은 시간을 표시합니다.
+        DispatchQueue.main.async { [weak self] in
+            self!.timerLabel.text = "대기하세요: \(self!.remaining119Seconds)초"
+        }
+           //timerLabel.text = "\(remaining119Seconds)초"
            
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer6), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer6() {
-           if oneMinSeconds > 0 {
-               oneMinSeconds -= 1
-               updateUI()
+           // 0초일 때에는 타이머를 정지하고 초기화
+           if remaining119Seconds == 0 {
+               timer3?.invalidate()
+               remaining119Seconds = 59 // 실험끝나면 199로 바꿀것
+               self.registerBtn.isHidden = false
            } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               //MARK: 1-1이 끝나면 get 으로 요청하고 바로 5-2 시작
-               getContentAPI()
-               five_Two()
-               
+               // 남은 시간 감소
+               remaining119Seconds -= 1
            }
        }
     
-    //MARK: - 타이머 구현 1분 1-2
-    func oneMinTimer2() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer7), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer7() {
-           if oneMinSeconds > 0 {
-               oneMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               getContentAPI()
-               five_Thr()
-               
-           }
-       }
+    @objc func checkTime() {
+        let currentDate = Date()
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute, .second], from: currentDate)
+        
+        guard let hour = components.hour, let minute = components.minute, let second = components.second else {
+            return
+        }
+        
+        // 15시 00분 00초 입장 get 호출 / 실험할때는 제거하고 뷰 입장하자마자 울리도록 구현해놓을것
+        if (hour == 00) && minute == 29 && second == 0 {
+           // getContentAPI() 동결
+            start299SecondTimer()
+            registerBtn.isHidden = false
+            
+        }
+        
+        // 15시 06분 00초 post 호출
+        if (hour == 00) && minute == 31 && second == 0 {
+            //toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 07분 00초 get 호출
+        if (hour == 00) && minute == 32 && second == 0 {
+            //serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 13분 00초 post 호출
+        if (hour == 00) && minute == 34 && second == 0 {
+            //toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 14분 00초 get 호출
+        if (hour == 00) && minute == 35 && second == 0 {
+           // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 20분 00초 post 호출
+        if (hour == 00) && minute == 37 && second == 0  {
+            // toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 21분 00초 get 호출
+        if (hour == 00) && minute == 38 && second == 0  {
+            // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 27분 00초 post 호출
+        if (hour == 00) && minute == 40 && second == 0  {
+            // toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 28분 00초 get 호출
+        if (hour == 00) && minute == 41 && second == 0  {
+            // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+        // 15시 34분 00초 post 호출
+        if (hour == 00) && minute == 43 && second == 0  {
+            // toGPTPost() 동결
+            start119SecondTimer()
+        }
+        
+        // 15시 35분 00초 get 호출
+        if (hour == 00) && minute == 44 && second == 0  {
+           // serverGet() 동결
+            start299SecondTimer()
+        }
+        
+    }
     
-    //MARK: - 타이머 구현 1분 1-3
-    func oneMinTimer3() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer8), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer8() {
-           if oneMinSeconds > 0 {
-               oneMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               getContentAPI()
-               five_For()
-               
-           }
-       }
+    func toGPTPost() {
+        print("toGPTPost 메서드 호출됨")
+        postGPTAPI()
+        
+    }
     
-    //MARK: - 타이머 구현 1분 1-4
-    func oneMinTimer4() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer9), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer9() {
-           if oneMinSeconds > 0 {
-               oneMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               getContentAPI()
-               five_Fiv()
-               
-           }
-       }
+    func serverGet() {
+        print("serverGet 메서드 호출됨")
+        getContentAPI()
+      }
     
-    //MARK: - 타이머 구현 1분 1-5
-    func oneMinTimer5() {
-           // 이전 타이머가 있으면 무효화
-           timer?.invalidate()
-           
-           // 1초마다 업데이트
-           timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer10), userInfo: nil, repeats: true)
-       }
-       
-       @objc func updateTimer10() {
-           if oneMinSeconds > 0 {
-               oneMinSeconds -= 1
-               updateUI()
-           } else {
-               // 타이머 종료
-               timer?.invalidate()
-               timer = nil
-               getContentAPI()
-               
-//               토론 종료됬다고 알럿 띄우고
-//               채팅창 등록버튼 지우기
-               self.registerBtn.isHidden
-               let alert = UIAlertController(title: "토론이 종료되었습니다.", message: nil, preferredStyle: .alert)
-               let okBtn = UIAlertAction(title: "확인", style: .default)
-               alert.addAction(okBtn)
-               present(alert, animated: true)
+    
 
-               
-           }
-       }
-    
       
     //MARK: - 등록하기 버튼 클릭
     @IBAction func tapRegisterBtn(_ sender: UIButton) {
         guard let text = textView.text else {return}
-        self.data.append(text)
-        self.tableView.reloadData()
-        //myTextPostAPI()
+       // myTextPostAPI()
         self.textView.text = nil
+        self.registerBtn.isHidden = true
     
-        // 등록버튼 누르면 바로 최신데이터가 보일수있게 스크롤해줌
-        let indexPath = IndexPath(row: self.data.count - 1, section: 0)
-           self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-        // 키보드 감추기
-            self.view.endEditing(true)
-            // 뷰 위치 원래대로 복구
-            self.view.frame.origin.y = 0
+//        // 등록버튼 누르면 바로 최신데이터가 보일수있게 스크롤해줌
+//        let indexPath = IndexPath(row: self.data.count - 1, section: 0)
+//           self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+//        // 키보드 감추기
+//            self.view.endEditing(true)
+//            // 뷰 위치 원래대로 복구
+//            self.view.frame.origin.y = 0
     }
     
    
@@ -367,7 +241,6 @@ class AgreeChatVC: UIViewController {
     func postGPTAPI() {
         print("찬성채팅자아앙~~~postGPTAPI calledddddddddd~~")
         //타이머가 지나면서 포스트가울리던 여튼 포스트가 울릴때마다 qType 의 변수가 1씩 올라가도록 구현해야함.
-        //일단임시로 해보겠음
         
         agreeChatVM.qType += 1
         
@@ -398,7 +271,7 @@ class AgreeChatVC: UIViewController {
         //타이머가 지나면서 포스트가울리던 여튼 포스트가 울릴때마다 qType 의 변수가 1씩 올라가도록 구현해야함.
         //일단임시로 해보겠음
         
-       
+       print("myTextPostAPI 가 호출되었습니다. ")
         
         guard let text = self.textView.text else {return}
         
@@ -490,6 +363,9 @@ class AgreeChatVC: UIViewController {
         self.view.frame.origin.y = 0
     }
     
+    
+   
+    
 }
 
 
@@ -502,9 +378,7 @@ extension AgreeChatVC: UITableViewDelegate , UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "AgreeChatCell") as? AgreeChatCell else {
             return UITableViewCell()
         }
-        let data = data[indexPath.row]
-//        cell.mentLabel.text = data
-        
+       
         // 짝수 번째 셀인지 확인하여 레이아웃을 조정합니다.
         if indexPath.row % 2 == 0 {
             cell.mentLabel.text = "AI사회자: \(data)"
@@ -538,9 +412,6 @@ extension AgreeChatVC: UITableViewDelegate , UITableViewDataSource {
     }
     
 }
-
-
-
 
 class AgreeChatCell: UITableViewCell {
     
