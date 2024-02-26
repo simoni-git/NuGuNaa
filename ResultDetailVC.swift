@@ -11,7 +11,7 @@ import Alamofire
 class ResultDetailVC: UIViewController {
     
 
-    var data: [String] = [""]
+    var data: [String] = []
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var tableView: UITableView!
     
@@ -88,6 +88,7 @@ extension ResultDetailVC: UITableViewDataSource , UITableViewDelegate {
             cell.leadingConstant.constant = 70
             cell.trailingConstant.constant = 10
             cell.subView.backgroundColor = .white
+            cell.resultLabel.textColor = .black
             }
         
         cell.subView.layer.cornerRadius = 10
