@@ -29,6 +29,8 @@ class ResultDetailVC: UIViewController {
         
         getGPTEndAPI()
         titleLabel.text = billName
+        
+        tableView.estimatedRowHeight = 60 // 테이블뷰셀의 대략적인 높이
 
        
     }
@@ -79,49 +81,21 @@ extension ResultDetailVC: UITableViewDataSource , UITableViewDelegate {
             
             cell.leadingConstant.constant = 10
             cell.trailingConstant.constant = 70
+            cell.subView.backgroundColor = UIColor(hex: "26A69A")
+            cell.resultLabel.textColor = .white
         } else {
             
             cell.leadingConstant.constant = 70
             cell.trailingConstant.constant = 10
+            cell.subView.backgroundColor = .white
             }
         
         cell.subView.layer.cornerRadius = 10
         
-//        // 데이터 설정
-//            let content = self.data[indexPath.row]
-//            cell.resultLabel.text = content
-//            
-//            // 짝수 인덱스는 왼쪽, 홀수 인덱스는 오른쪽으로 밀착
-//        
-//               if indexPath.row % 2 == 0 {
-//                   cell.resultLabel.text = "찬성측: \(content)"
-//                   // 짝수 번째 셀: 셀을 왼쪽에 붙이고 오른쪽 마진을 추가합니다.
-//                   cell.resultLabel.textAlignment = .left
-//                   cell.contentView.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 8)
-//               } else {
-//                   cell.resultLabel.text = "반대측: \(content)"
-//                   // 홀수 번째 셀: 셀을 오른쪽에 붙이고 왼쪽 마진을 추가합니다.
-//                   cell.resultLabel.textAlignment = .right
-//                   cell.contentView.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 16)
-//               }
-//          
-//        
-//        cell.layer.masksToBounds = false
-//        cell.layer.shadowColor = UIColor.black.cgColor
-//        cell.layer.shadowOpacity = 0.5
-//        cell.layer.shadowOffset = CGSize(width: 0, height: 2)
-//        cell.layer.shadowRadius = 10
-//        cell.layer.cornerRadius = 10
-//        cell.contentView.frame.inset(by: UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0))
-//        
+
         
         
         return cell
-    }
-    
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 200
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -138,14 +112,23 @@ class ResultCell: UITableViewCell {
     
     @IBOutlet weak var trailingConstant: NSLayoutConstraint!
     @IBOutlet weak var leadingConstant: NSLayoutConstraint!
+
     
-    
-//    override func layoutSubviews() {
-//        super.layoutSubviews()
-//        
-//        contentView.frame = contentView.frame.inset(by: UIEdgeInsets(top: 5, left: 0 , bottom: 5, right: 0))
-//        
-//    }
-    
-    
+}
+
+extension UIColor {
+    convenience init(hex: String) {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+        var rgb: UInt64 = 0
+
+        Scanner(string: hexSanitized).scanHexInt64(&rgb)
+
+        let red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
+        let green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
+        let blue = CGFloat(rgb & 0x0000FF) / 255.0
+
+        self.init(red: red, green: green, blue: blue, alpha: 1.0)
+    }
 }

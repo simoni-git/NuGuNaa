@@ -21,8 +21,8 @@ class AgreeChatVC: UIViewController {
     var timer2: Timer?
     var timer3: Timer?
     
-    var remaining299Seconds = 119 // 타이머 초 초기값 설정 299로 바꿔야함
-    var remaining119Seconds = 59 // 타이머 초 초기값 설정 119로 바꿔야함
+    var remaining479Seconds = 479 // 타이머 초 초기값 설정 7분59초
+    var remaining119Seconds = 119 // 타이머 초 초기값 설정 1분59초
     
     @IBOutlet weak var contentsView: UIView!
     @IBOutlet weak var timerLabel: UILabel!
@@ -37,7 +37,7 @@ class AgreeChatVC: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 100 // 테이블뷰셀의 대략적인 높이
+        tableView.estimatedRowHeight = 60 // 테이블뷰셀의 대략적인 높이
         timer?.fire()
         // 1초마다 checkTime 메서드를 호출하는 타이머 설정
         timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(checkTime), userInfo: nil, repeats: true)
@@ -70,17 +70,17 @@ class AgreeChatVC: UIViewController {
     @objc func updateTimerLabel() {
            // timeLabel에 남은 시간을 표시합니다.
         DispatchQueue.main.async { [weak self] in
-            self!.timerLabel.text = "제한시간: \(self!.remaining299Seconds)초"
+            self!.timerLabel.text = "제한시간: \(self!.remaining479Seconds)초"
         }
            
            // 0초일 때에는 타이머를 정지하고 초기화
-           if remaining299Seconds == 0 {
+           if remaining479Seconds == 0 {
                timer2?.invalidate()
-               remaining299Seconds = 119 // 실험끝나면 299로 바꿀것
+               remaining479Seconds = 479
                self.registerBtn.isHidden = true
            } else {
                // 남은 시간 감소
-               remaining299Seconds -= 1
+               remaining479Seconds -= 1
            }
        }
     
@@ -107,7 +107,7 @@ class AgreeChatVC: UIViewController {
            // 0초일 때에는 타이머를 정지하고 초기화
            if remaining119Seconds == 0 {
                timer3?.invalidate()
-               remaining119Seconds = 59 // 실험끝나면 199로 바꿀것
+               remaining119Seconds = 119 
                self.registerBtn.isHidden = false
            } else {
                // 남은 시간 감소
@@ -124,8 +124,9 @@ class AgreeChatVC: UIViewController {
             return
         }
         
+        
         // 15시 00분 00초 입장 get 호출 / 실험할때는 제거하고 뷰 입장하자마자 울리도록 구현해놓을것
-        if (hour == 00) && minute == 07 && second == 0 {
+        if (hour == 15) && minute == 00 && second == 0 {
             getContentAPI()
             start299SecondTimer()
             registerBtn.isHidden = false
@@ -133,67 +134,66 @@ class AgreeChatVC: UIViewController {
         }
         
         // 15시 06분 00초 post 호출
-        if (hour == 00) && minute == 09 && second == 0 {
+        if (hour == 15) && minute == 08 && second == 0 {
             toGPTPost()
             start119SecondTimer()
         }
         
         // 15시 07분 00초 get 호출
-        if (hour == 00) && minute == 10 && second == 0 {
+        if (hour == 15) && minute == 10 && second == 0 {
             serverGet()
             start299SecondTimer()
         }
         
         // 15시 13분 00초 post 호출
-        if (hour == 00) && minute == 12 && second == 0 {
+        if (hour == 15) && minute == 18 && second == 0 {
             toGPTPost()
             start119SecondTimer()
         }
         
         // 15시 14분 00초 get 호출
-        if (hour == 00) && minute == 13 && second == 0 {
+        if (hour == 15) && minute == 20 && second == 0 {
             serverGet()
             start299SecondTimer()
         }
         
         // 15시 20분 00초 post 호출
-        if (hour == 00) && minute == 15 && second == 0  {
+        if (hour == 15) && minute == 28 && second == 0  {
              toGPTPost()
             start119SecondTimer()
         }
         
         // 15시 21분 00초 get 호출
-        if (hour == 00) && minute == 16 && second == 0  {
+        if (hour == 15) && minute == 30 && second == 0  {
              serverGet()
             start299SecondTimer()
         }
         
         // 15시 27분 00초 post 호출
-        if (hour == 00) && minute == 18 && second == 0  {
+        if (hour == 15) && minute == 38 && second == 0  {
              toGPTPost()
             start119SecondTimer()
         }
         
         // 15시 28분 00초 get 호출
-        if (hour == 00) && minute == 19 && second == 0  {
+        if (hour == 15) && minute == 40 && second == 0  {
              serverGet()
             start299SecondTimer()
         }
         
         // 15시 34분 00초 post 호출
-        if (hour == 00) && minute == 21 && second == 0  {
+        if (hour == 15) && minute == 48 && second == 0  {
              toGPTPost()
             start119SecondTimer()
         }
         
         // 15시 35분 00초 get 호출
-        if (hour == 00) && minute == 22 && second == 0  {
+        if (hour == 15) && minute == 50 && second == 0  {
             serverGet()
             registerBtn.isHidden = true
             timerLabel.text = "토론종료"
             textView.text = "토론이 종료되었습니다. 채팅방에서 나가주셔도 됩니다."
         }
-        
     }
     
     func toGPTPost() {
@@ -298,7 +298,7 @@ class AgreeChatVC: UIViewController {
                         // 요청 성공시, petitionResponse 변수에 파싱된 결과가 들어갑니다.
                         print("요청 성공: \(petitionResponse)")
                         self.data.removeAll()
-                        self.data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않으며 모든 채팅은 150자 이내로 작성해 주세요. 입론을 먼저 서술해 주세요!")
+                        self.data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않습니다. 입론을 시작하겠습니다. 자신의 의견을 서술해 주세요!")
                         let content = petitionResponse.map { $0.content }
                         self.data.append(contentsOf: content)
                         //self.data = petitionResponse.map { $0.content }
@@ -373,10 +373,15 @@ extension AgreeChatVC: UITableViewDelegate , UITableViewDataSource {
             
             cell.leadingConstant.constant = 10
             cell.trailingConstant.constant = 70
+            cell.subView.backgroundColor = UIColor(hex: "26A69A")
+            cell.mentLabel.textColor = .white
         } else {
             
             cell.leadingConstant.constant = 70
             cell.trailingConstant.constant = 10
+            cell.subView.backgroundColor = .white
+            cell.mentLabel.textColor = .black
+            
             }
         
         cell.subView.layer.cornerRadius = 10
@@ -384,9 +389,7 @@ extension AgreeChatVC: UITableViewDelegate , UITableViewDataSource {
         return cell
     }
     
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 120
-    }
+
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
