@@ -10,19 +10,24 @@ import Alamofire
 
 class AgreeChatVC: UIViewController {
     
-    var data: [String] = ["곧 토론이 시작됩니다. 잠시만 기다려주세요"]
+
     var accessToken: String = ""
     var billNO: String = ""
-    var position: Int = 0
     var billTitle: String = ""
     
     var agreeChatVM: AgreeChatVM!
     var timer: Timer?
-    var timer2: Timer?
-    var timer3: Timer?
+//    var timer2: Timer?
+//    var timer3: Timer?
     
-    var remaining479Seconds = 479 // 타이머 초 초기값 설정 7분59초
-    var remaining119Seconds = 119 // 타이머 초 초기값 설정 1분59초
+//    var remaining479Seconds = 479 // 타이머 초 초기값 설정 7분59초
+//    var remaining119Seconds = 119 // 타이머 초 초기값 설정 1분59초
+    
+    private var repeatsCount = 5
+    private let runTime = 480 // 실제 앱 8분
+    private let waitTime = 120 // 실제 앱 2분
+    
+    private let countdownTimer = CountDownTimer()
     
     @IBOutlet weak var contentsView: UIView!
     @IBOutlet weak var timerLabel: UILabel!
@@ -38,6 +43,7 @@ class AgreeChatVC: UIViewController {
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 60 // 테이블뷰셀의 대략적인 높이
+        
         timer?.fire()
         // 1초마다 checkTime 메서드를 호출하는 타이머 설정
         timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(checkTime), userInfo: nil, repeats: true)
@@ -52,68 +58,112 @@ class AgreeChatVC: UIViewController {
         registerBtn.isHidden = true
     }
     
+    //MARK: - 타이머 구현 비동기처리버전
+    
+    
+    func startTimer(duration: Int , text: String , completion: (() -> Void)? = nil) {
+        countdownTimer.stop()
+        countdownTimer.start(duration: TimeInterval(duration)) { [weak self] remainingTime in
+            self?.newUpdateTimerLabel(text: "\(text) : \(remainingTime)초")
+            if remainingTime == 0 {
+                //만약 남은시간이 0이라면 이블록을해라
+                completion?()
+            }
+        }
+        newUpdateTimerLabel(text: "\(text): \(duration)초")
+    }
+    
+    func newUpdateTimerLabel(text: String) {
+       // timeLabel에 남은 시간을 표시합니다.
+       DispatchQueue.main.async {
+           self.timerLabel.text = text
+       }
+   }
+    
+    func startTalk() {
+        guard repeatsCount > 0 else {
+            endTalk()
+            return
+        }
+        startTimer(duration: runTime, text: "제한시간") {
+            self.serverGet()
+            self.registerBtn.isHidden = false
+            self.startTimer(duration: self.waitTime, text: "대기시간") {
+                self.toGPTPost()
+                self.registerBtn.isHidden = true
+                self.startTalk()
+            }
+        }
+        repeatsCount -= 1
+    }
+    
+    func endTalk() {
+       timerLabel.text = "토론종료"
+        registerBtn.isHidden = true
+   }
+    
     //MARK: - 타이머구현
-    func start299SecondTimer() {
-        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
-        print("start299SecondTimer - called ")
-        if let timer2 = timer2, timer2.isValid {
-            timer2.invalidate()
-        }
-        
-        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
-        timer2 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel), userInfo: nil, repeats: true)
-        
-        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
-        updateTimerLabel()
-    }
+//    func start299SecondTimer() {
+//        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
+//        print("start299SecondTimer - called ")
+//        if let timer2 = timer2, timer2.isValid {
+//            timer2.invalidate()
+//        }
+//        
+//        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
+//        timer2 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel), userInfo: nil, repeats: true)
+//        
+//        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
+//        updateTimerLabel()
+//    }
     
-    @objc func updateTimerLabel() {
-           // timeLabel에 남은 시간을 표시합니다.
-        DispatchQueue.main.async { [weak self] in
-            self!.timerLabel.text = "제한시간: \(self!.remaining479Seconds)초"
-        }
-           
-           // 0초일 때에는 타이머를 정지하고 초기화
-           if remaining479Seconds == 0 {
-               timer2?.invalidate()
-               remaining479Seconds = 479
-               self.registerBtn.isHidden = true
-           } else {
-               // 남은 시간 감소
-               remaining479Seconds -= 1
-           }
-       }
+//    @objc func updateTimerLabel() {
+//           // timeLabel에 남은 시간을 표시합니다.
+//        DispatchQueue.main.async { [weak self] in
+//            self!.timerLabel.text = "제한시간: \(self!.remaining479Seconds)초"
+//        }
+//           
+//           // 0초일 때에는 타이머를 정지하고 초기화
+//           if remaining479Seconds == 0 {
+//               timer2?.invalidate()
+//               remaining479Seconds = 479
+//               self.registerBtn.isHidden = true
+//           } else {
+//               // 남은 시간 감소
+//               remaining479Seconds -= 1
+//           }
+//       }
     
-    func start119SecondTimer() {
-        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
-        print("start119SecondTimer - called ")
-        if let timer3 = timer3, timer3.isValid {
-            timer3.invalidate()
-        }
-        
-        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
-        timer3 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel2), userInfo: nil, repeats: true)
-        
-        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
-        updateTimerLabel2()
-    }
-    
-    @objc func updateTimerLabel2() {
-           // timeLabel에 남은 시간을 표시합니다.
-        DispatchQueue.main.async { [weak self] in
-            self!.timerLabel.text = "대기하세요: \(self!.remaining119Seconds)초"
-        }
-           
-           // 0초일 때에는 타이머를 정지하고 초기화
-           if remaining119Seconds == 0 {
-               timer3?.invalidate()
-               remaining119Seconds = 119 
-               self.registerBtn.isHidden = false
-           } else {
-               // 남은 시간 감소
-               remaining119Seconds -= 1
-           }
-       }
+//    func start119SecondTimer() {
+//        // 타이머가 이미 실행 중인지 확인하고, 실행 중이라면 종료합니다.
+//        print("start119SecondTimer - called ")
+//        if let timer3 = timer3, timer3.isValid {
+//            timer3.invalidate()
+//        }
+//        
+//        // 1초마다 updateTimerLabel 메서드를 호출하는 타이머 설정
+//        timer3 = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateTimerLabel2), userInfo: nil, repeats: true)
+//        
+//        // 타이머가 시작될 때 timeLabel을 업데이트합니다.
+//        updateTimerLabel2()
+//    }
+//    
+//    @objc func updateTimerLabel2() {
+//           // timeLabel에 남은 시간을 표시합니다.
+//        DispatchQueue.main.async { [weak self] in
+//            self!.timerLabel.text = "대기하세요: \(self!.remaining119Seconds)초"
+//        }
+//           
+//           // 0초일 때에는 타이머를 정지하고 초기화
+//           if remaining119Seconds == 0 {
+//               timer3?.invalidate()
+//               remaining119Seconds = 119 
+//               self.registerBtn.isHidden = false
+//           } else {
+//               // 남은 시간 감소
+//               remaining119Seconds -= 1
+//           }
+//       }
     
     @objc func checkTime() {
         let currentDate = Date()
@@ -124,77 +174,79 @@ class AgreeChatVC: UIViewController {
             return
         }
         
-        
         // 15시 00분 00초 입장 get 호출 / 실험할때는 제거하고 뷰 입장하자마자 울리도록 구현해놓을것
         if (hour == 15) && minute == 00 && second == 0 {
             getContentAPI()
-            start299SecondTimer()
+            //start299SecondTimer()
+            startTalk()
             registerBtn.isHidden = false
             
         }
-        
-        // 15시 06분 00초 post 호출
-        if (hour == 15) && minute == 08 && second == 0 {
-            toGPTPost()
-            start119SecondTimer()
-        }
-        
-        // 15시 07분 00초 get 호출
-        if (hour == 15) && minute == 10 && second == 0 {
-            serverGet()
-            start299SecondTimer()
-        }
-        
-        // 15시 13분 00초 post 호출
-        if (hour == 15) && minute == 18 && second == 0 {
-            toGPTPost()
-            start119SecondTimer()
-        }
-        
-        // 15시 14분 00초 get 호출
-        if (hour == 15) && minute == 20 && second == 0 {
-            serverGet()
-            start299SecondTimer()
-        }
-        
-        // 15시 20분 00초 post 호출
-        if (hour == 15) && minute == 28 && second == 0  {
-             toGPTPost()
-            start119SecondTimer()
-        }
-        
-        // 15시 21분 00초 get 호출
-        if (hour == 15) && minute == 30 && second == 0  {
-             serverGet()
-            start299SecondTimer()
-        }
-        
-        // 15시 27분 00초 post 호출
-        if (hour == 15) && minute == 38 && second == 0  {
-             toGPTPost()
-            start119SecondTimer()
-        }
-        
-        // 15시 28분 00초 get 호출
-        if (hour == 15) && minute == 40 && second == 0  {
-             serverGet()
-            start299SecondTimer()
-        }
-        
-        // 15시 34분 00초 post 호출
-        if (hour == 15) && minute == 48 && second == 0  {
-             toGPTPost()
-            start119SecondTimer()
-        }
-        
-        // 15시 35분 00초 get 호출
-        if (hour == 15) && minute == 50 && second == 0  {
-            serverGet()
-            registerBtn.isHidden = true
-            timerLabel.text = "토론종료"
-            textView.text = "토론이 종료되었습니다. 채팅방에서 나가주셔도 됩니다."
-        }
     }
+    
+        
+//        // 15시 06분 00초 post 호출
+//        if (hour == 15) && minute == 08 && second == 0 {
+//            toGPTPost()
+//            start119SecondTimer()
+//        }
+//        
+//        // 15시 07분 00초 get 호출
+//        if (hour == 15) && minute == 10 && second == 0 {
+//            serverGet()
+//            start299SecondTimer()
+//        }
+//        
+//        // 15시 13분 00초 post 호출
+//        if (hour == 15) && minute == 18 && second == 0 {
+//            toGPTPost()
+//            start119SecondTimer()
+//        }
+//        
+//        // 15시 14분 00초 get 호출
+//        if (hour == 15) && minute == 20 && second == 0 {
+//            serverGet()
+//            start299SecondTimer()
+//        }
+//        
+//        // 15시 20분 00초 post 호출
+//        if (hour == 15) && minute == 28 && second == 0  {
+//             toGPTPost()
+//            start119SecondTimer()
+//        }
+//        
+//        // 15시 21분 00초 get 호출
+//        if (hour == 15) && minute == 30 && second == 0  {
+//             serverGet()
+//            start299SecondTimer()
+//        }
+//        
+//        // 15시 27분 00초 post 호출
+//        if (hour == 15) && minute == 38 && second == 0  {
+//             toGPTPost()
+//            start119SecondTimer()
+//        }
+//        
+//        // 15시 28분 00초 get 호출
+//        if (hour == 15) && minute == 40 && second == 0  {
+//             serverGet()
+//            start299SecondTimer()
+//        }
+//        
+//        // 15시 34분 00초 post 호출
+//        if (hour == 15) && minute == 48 && second == 0  {
+//             toGPTPost()
+//            start119SecondTimer()
+//        }
+//        
+//        // 15시 35분 00초 get 호출
+//        if (hour == 15) && minute == 50 && second == 0  {
+//            serverGet()
+//            registerBtn.isHidden = true
+//            timerLabel.text = "토론종료"
+//            textView.text = "토론이 종료되었습니다. 채팅방에서 나가주셔도 됩니다."
+//        }
+//    }
     
     func toGPTPost() {
         print("AgreeChatVC - toGPTPost() called 호출됨")
@@ -211,13 +263,13 @@ class AgreeChatVC: UIViewController {
     @IBAction func tapRegisterBtn(_ sender: UIButton) {
         guard let text = textView.text else {return}
         myTextPostAPI()
-        self.data.append(text)
+        self.agreeChatVM.data.append(text)
         self.tableView.reloadData()
         self.textView.text = nil
         self.registerBtn.isHidden = true
     
         // 등록버튼 누르면 바로 최신데이터가 보일수있게 스크롤해줌
-        let indexPath = IndexPath(row: self.data.count - 1, section: 0)
+        let indexPath = IndexPath(row: self.agreeChatVM.data.count - 1, section: 0)
            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
         // 키보드 감추기
             self.view.endEditing(true)
@@ -297,14 +349,14 @@ class AgreeChatVC: UIViewController {
                     case .success(let petitionResponse):
                         // 요청 성공시, petitionResponse 변수에 파싱된 결과가 들어갑니다.
                         print("요청 성공: \(petitionResponse)")
-                        self.data.removeAll()
-                        self.data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않습니다. 입론을 시작하겠습니다. 자신의 의견을 서술해 주세요!")
+                        self.agreeChatVM.data.removeAll()
+                        self.agreeChatVM.data.append("안녕하세요! 이번 토론 사회자를 맡게된 AI사회자 입니다. 이번 제목인 \(self.billTitle) 에 대해서 토론을 진행하도록 하겠습니다. 등록버튼은 한번 누르시면 수정되지 않습니다. 입론을 시작하겠습니다. 자신의 의견을 서술해 주세요!")
                         let content = petitionResponse.map { $0.content }
-                        self.data.append(contentsOf: content)
+                        self.agreeChatVM.data.append(contentsOf: content)
                         //self.data = petitionResponse.map { $0.content }
                         self.tableView.reloadData()
                         //등록버튼 누르면 바로 최신데이터가 보일수있게 스크롤해줌
-                       let indexPath = IndexPath(row: self.data.count - 1, section: 0)
+                        let indexPath = IndexPath(row: self.agreeChatVM.data.count - 1, section: 0)
                           self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
                         
                     case .failure(let error):
@@ -358,7 +410,7 @@ class AgreeChatVC: UIViewController {
 
 extension AgreeChatVC: UITableViewDelegate , UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return data.count
+        return self.agreeChatVM.data.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -366,7 +418,7 @@ extension AgreeChatVC: UITableViewDelegate , UITableViewDataSource {
             return UITableViewCell()
         }
         
-        let data = data[indexPath.row]
+        let data = self.agreeChatVM.data[indexPath.row]
         cell.mentLabel.text = data
         
         if indexPath.row % 2 == 0 {
@@ -406,3 +458,31 @@ class AgreeChatCell: UITableViewCell {
  
 }
 
+class CountDownTimer {
+    private var timer: Timer?
+    private var remainingTime: TimeInterval = 0
+    
+    func start(duration: TimeInterval , action: @escaping (Int) -> Void) {
+        remainingTime = duration
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { [weak self] _ in
+            //1초마다 뭐할래?
+            guard let self, self.remainingTime > 0 else {
+                //self.remainingTime 이 0보다 크지않다면 여기블록을
+                self?.stop()
+                action(0)
+                return
+            }
+            //self.remainingTime 이 0보다 크다면 여기블록을 타게됨
+            self.remainingTime -= 1
+            action(Int(remainingTime)) //(Int(remainingTime)) 로 표현한 이유는 TimeInterval 은 더블형의 타입엘리스임. 즉 Double 형의 별명이라는거임. 그래서 Int 로 감싸줘서 정수로 만들어줘야함.
+            
+        })
+    }
+    
+    func stop() {
+        remainingTime = 0
+        timer?.invalidate()
+        timer = nil
+    }
+    
+}
