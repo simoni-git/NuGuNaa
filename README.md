@@ -221,71 +221,10 @@ class CountDownTimer {
 - **책임감**: 팀 프로젝트에서 iOS 파트 100% 완성 책임감 체득
 
 ---
-
-## 📱 Screenshots
-
-> 스크린샷을 `screenshots/` 폴더에 추가해주세요:
-> - 청원 리스트 화면
-> - 토론 참여 화면
-> - AI 토론 결과 화면
+## 현재 서비스 종료
 
 ---
 
-## 🚀 Getting Started
-
-### Requirements
-- iOS 14.0+
-- Xcode 13.0+
-- Swift 5.0+
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/simoni-git/NuGuNaa.git
-cd NuGuNaa
-```
-
-2. **Install dependencies**
-```bash
-pod install  # CocoaPods 사용 시
-```
-
-3. **Open project**
-```bash
-open NuGuNaa.xcworkspace
-```
-
-4. **API Key 설정**
-- 백엔드 서버 URL 설정
-- JWT 인증 토큰 발급
-
-5. **Build and Run**
-- Xcode에서 `Cmd + R`로 실행
-
----
-
-## 📂 Project Structure
-
-```
-NuGuNaa/
-├── Models/
-│   ├── Petition.swift         # 청원 데이터 모델
-│   └── DebateRoom.swift        # 토론방 모델
-├── Views/
-│   ├── PetitionListCell.swift # 청원 리스트 셀
-│   └── ChatCell.swift          # 채팅 셀
-├── ViewModels/
-│   ├── CommunityListVM.swift  # 청원 리스트 VM
-│   └── DebateVM.swift          # 토론 관리 VM
-├── Controllers/
-│   ├── PetitionListVC.swift   # 청원 목록 화면
-│   └── DebateRoomVC.swift      # 토론방 화면
-└── Utils/
-    └── CountDownTimer.swift    # 타이머 유틸
-```
-
----
 
 ## 💭 회고 (Retrospective)
 
@@ -312,8 +251,6 @@ NuGuNaa/
 
 - **GitHub Repository**: [simoni-git/NuGuNaa](https://github.com/simoni-git/NuGuNaa)
 - **국회 공공데이터**: [열린국회정보](https://open.assembly.go.kr/)
-- **수상 뉴스**: [링크 추가 예정]
-
 ---
 
 ## 👤 Author
@@ -328,8 +265,8 @@ NuGuNaa/
 ## 👥 Team
 
 - **iOS Developer**: 고민수 (본인)
-- **Backend Developers**: [팀원 이름]
-- **PM/Designer**: [팀원 이름]
+- **Backend Developers**: [안순호]
+- **PM**: [안효성 , 박선욱]
 
 ---
 
